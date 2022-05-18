@@ -19,7 +19,7 @@ nine_h = pygame.image.load('hearts/9h.png')
 ten_h = pygame.image.load('hearts/10h.png')
 jack_h = pygame.image.load('hearts/jh.png')
 queen_h = pygame.image.load('hearts/qh.png')
-king_h = pygame.image.load('hearts/5h.png')
+king_h = pygame.image.load('hearts/kh.png')
 
 one_d = pygame.image.load('diamonds/1d.png')
 two_d = pygame.image.load('diamonds/2d.png')
@@ -172,7 +172,7 @@ def status():
         print(x.number, x.shape)
     
     
-
+font = pygame.font.Font('freesansbold.ttf',15)
 def take_turn(player2):
     global turn
     global table
@@ -180,6 +180,7 @@ def take_turn(player2):
     if len(player2.deck) > 0:
         if len(table) > 0:
             if table[len(table)-1].is_attack_card:
+                time.sleep(1)
                 card2_drawn = player2.deck.pop()
                                 
                 print(card2_drawn.number, card2_drawn.shape)
@@ -187,26 +188,49 @@ def take_turn(player2):
                 chances = attack_numbers[table[len(table)-1].number]
                             
                 table.append(card2_drawn)
+                
+                text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
+                screen.blit(text, (0,200))
+                    
                 screen.blit(card2_drawn.image, (0, 0))
                 if not card2_drawn.is_attack_card:
                     chances -= 1
-                                    
+                pygame.display.update()                   
                 while not card2_drawn.is_attack_card and len(player2.deck) > 0 and chances != 0:
                     time.sleep(1)
                     card2_drawn = player2.deck.pop()
                     table.append(card2_drawn)
                     screen.blit(card2_drawn.image, (0, 0))
+                    
+                    text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
+                    screen.blit(text, (0,200))
+                    pygame.display.update()
+                    
                     print(card2_drawn.number, card2_drawn.shape)
                     chances -= 1
                     
                 if not card2_drawn.is_attack_card:
                     print(str(turn) + " lost the round")
-                    x = turn - 1
+    
+                    
+                    text = font.render("Player " + str(turn) + " lost the round", True, (128,0,0), (0,0,128))
+                    screen.blit(text, (100,100))
+  
+                    turn = turn - 1
                     if turn == 0:
-                        x = 4
+                        turn = 4
                     for card in table:
-                        players[x-1].deck.append(card)
-                    status()
+                        players[turn-1].deck.append(card)
+                    
+                    text = font.render('Player ' + str(turn) + '\'s Turn', True, (128,0,0), (0,0,128))
+                    screen.blit(text, (100,200))
+                    
+                    pygame.display.update()
+                    time.sleep(1)
+                    screen.fill(background_color)
+                    pygame.display.update()
+  
+                    
                 elif len(player2.deck) <= 0:
                     print(str(turn) + " ran out of cards!")
                 else:
@@ -216,15 +240,24 @@ def take_turn(player2):
             else:
                 card2_drawn = player2.deck.pop()
                 table.append(card2_drawn)
+                
+                text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
+                screen.blit(text, (0,200))
+                    
                 screen.blit(card2_drawn.image, (0, 0))
                 print(card2_drawn.number, card2_drawn.shape)
                 turn += 1
                 if turn == 5:
                     turn = 1
         else:
+            time.sleep(0.5)
             card2_drawn = player2.deck.pop()
             table.append(card2_drawn)
             screen.blit(card2_drawn.image, (0, 0))
+            
+            text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
+            screen.blit(text, (0,200))
+            pygame.display.update()
             
             print(card2_drawn.number, card2_drawn.shape)
             turn += 1
@@ -239,17 +272,24 @@ while True:
             sys.exit()
         
         if event.type == pygame.MOUSEBUTTONDOWN:
+            print(turn)
             if turn == 1:
-                print('1111111111')
                 take_turn(player1)
             if turn == 2:
-                print('22222222')
                 take_turn(player2)
-                    
+                        
             if turn == 3: 
-                print('33333333')
+
                 take_turn(player3)
             if turn == 4:     
-                print('44444444')
+               
                 take_turn(player4)
+        if turn == 2:
+            take_turn(player2)
+                        
+        if turn == 3: 
+            take_turn(player3)
+        if turn == 4:     
+            take_turn(player4)
+        
     pygame.display.update()
