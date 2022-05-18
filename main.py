@@ -173,10 +173,15 @@ def status():
         print(x.number, x.shape)
     
 font = pygame.font.Font('freesansbold.ttf',15)
+
 def display_turn(card):
     global screen
     global font
-    text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
+
+    if turn == 0:
+        text = font.render("Player " + str(1), True, (128,0,0), (0,0,128))
+    else:
+        text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
     screen.blit(text, (0,200))
     screen.blit(card.image, (0, 0))
     pygame.display.update()
@@ -188,43 +193,110 @@ def player_turn(turn, next_or_prev):
         if turn == 0:
             turn = 4
             
-        return turn
+        if len(players[turn-1].deck) == 0:
+            print("player " + str(turn) + " ran out of cards!")
+            turn = player_turn(turn, 'prev')
     elif next_or_prev == 'next':
         turn += 1
-        
         if turn == 5:
             turn = 1
-        return turn
+        if len(players[turn-1].deck) == 0:
+            print("player " + str(turn) + " ran out of cards!")
+            turn = player_turn(turn, 'next')
+    return turn
     
     return 0
         
 def lost_round_msg(turn):
     global font
-    text = font.render("Player " + str(turn) + " lost the round", True, (128,0,0), (0,0,128))
+    if turn == 4:
+        text = font.render("Player " + str(1) + " lost the round", True, (128,0,0), (0,0,128))
+    else:
+        text = font.render("Player " + str(turn+1) + " lost the round", True, (128,0,0), (0,0,128))
     screen.blit(text, (100,100))
     text = font.render('Player ' + str(turn) + '\'s Turn', True, (128,0,0), (0,0,128))
     screen.blit(text, (100,200))
     pygame.display.update()
+    print('player 1: ' + str(len(player1.deck)))
+    print('player 2: ' + str(len(player2.deck)))
+    print('player 3: ' + str(len(player3.deck)))
+    print('player 4: ' + str(len(player4.deck)))
 
 def draw(player):
     global table
+    time.sleep(0.6)
     card_drawn = player.deck.pop()
     table.append(card_drawn)
+    if is_slap(table):
+        for card in table:
+            print(card.number, card.shape)
+        print('SLAP!!!')
     return card_drawn
     
 def whose_card(turn):
     global font
     text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
     screen.blit(text, (0,200))
+
+def reset():
+    global screen
+    global table
+    table = []
+    time.sleep(1)
+    screen.fill(background_color)
+    pygame.display.update()
+
+player1_chances = 0
+
+def player1_defense():
+    global player1_chances
+    global turn
+    if len(player1.deck) > 0:
+        card_drawn = draw(player1)
+        if (not card_drawn.is_attack_card) and player1_chances > 0:
+            time.sleep(0.7)
+            display_turn(card_drawn)
+            player1_chances -= 1
+            turn = 0
+            if player1_chances == 0:
+                lost_round_msg(1)
+                reset()
+                turn = 4
+        elif player1_chances > 0:
+            time.sleep(0.7)
+            display_turn(card_drawn)
+            turn = 2
+            
+def is_slap(table):
+    if len(table) == 2:
+        if table[0].number == table[1].number:
+            return True
+        if table[0].number == 'Q' and table[1] == 'K':
+            return True
+        if table[0].number == 'K' and table[1] == 'Q':
+            return True
+    elif len(table) > 2:
+        if table[len(table)-1].number == table[len(table)-2].number:
+            return True
+        if table[len(table)-1].number == table[len(table)-3].number:
+            return True
+        if table[len(table)-1].number == 'Q' and table[len(table)-2] == 'K':
+            return True
+        if table[len(table)-1].number == 'K' and table[len(table)-2] == 'Q':
+            return True
+    return False
     
 def take_turn(player):
     global turn
     global table
-    
+    global player1_chances
     if len(player.deck) > 0:
         if len(table) > 0:
-            if table[len(table)-1].is_attack_card:
-                time.sleep(0.5)
+            if table[len(table)-1].is_attack_card and player == player1:
+                player1_chances = attack_numbers[table[len(table)-1].number]
+                player1_defense()
+            elif table[len(table)-1].is_attack_card:
+                time.sleep(0.7)
                 card_drawn = draw(player)
                 chances = attack_numbers[table[len(table)-2].number]
                 
@@ -234,8 +306,8 @@ def take_turn(player):
                 display_turn(card_drawn)
                 pygame.display.update()      
                              
-                while not card_drawn.is_attack_card and len(player.deck) > 0 and chances != 0:
-                    time.sleep(1)
+                while not card_drawn.is_attack_card and len(player.deck) > 0 and chances > 0:
+                    time.sleep(0.7)
                     card_drawn = draw(player)
                     display_turn(card_drawn)
                     chances -= 1
@@ -247,12 +319,11 @@ def take_turn(player):
                         players[turn-1].deck.append(card)
             
                     lost_round_msg(turn)
-                    time.sleep(1)
-                    screen.fill(background_color)
-                    pygame.display.update()
+                    reset()
   
                 elif len(player.deck) <= 0:
                     print(str(turn) + " ran out of cards!")
+                    turn = player_turn(turn, 'next')
                 else:
                     turn = player_turn(turn, 'next')
             else:
@@ -268,29 +339,17 @@ def take_turn(player):
     pygame.display.update()
 
 while True:
+    if turn > 1:
+        take_turn(players[turn-1])  
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
-        
+        if event.type == pygame.KEYDOWN:
+            print('hi')     
         if event.type == pygame.MOUSEBUTTONDOWN:
-            print(turn)
+            if turn == 0:
+                player1_defense()
             if turn == 1:
-                take_turn(player1)
-            if turn == 2:
-                take_turn(player2)
-                        
-            if turn == 3: 
-
-                take_turn(player3)
-            if turn == 4:     
-               
-                take_turn(player4)
-        if turn == 2:
-            take_turn(player2)
-                        
-        if turn == 3: 
-            take_turn(player3)
-        if turn == 4:     
-            take_turn(player4)
+                take_turn(player1) 
         
     pygame.display.update()
