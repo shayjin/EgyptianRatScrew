@@ -70,6 +70,10 @@ card_images = [
     [one_c, two_c, three_c, four_c, five_c, six_c, seven_c, eight_c, nine_c, ten_c, jack_c, queen_c, king_c]
 ]
 
+pygame.mixer.init()
+set_sound = pygame.mixer.Sound('set.mp3')
+slap_sound = pygame.mixer.Sound('slap.wav')
+
 
 background_color = (100,120,120)
 
@@ -183,10 +187,11 @@ def display_turn(card):
     else:
         text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
     screen.blit(text, (0,200))
-    screen.blit(card.image, (0, 0))
+    screen.blit(card.image, (WIDTH/4+offset, HEIGHT/3+WIDTH/8))
     pygame.display.update()
     
 def player_turn(turn, next_or_prev):
+    global offset
     if next_or_prev == 'prev':
         turn -= 1
                         
@@ -205,14 +210,29 @@ def player_turn(turn, next_or_prev):
             turn = player_turn(turn, 'next')
     return turn
     
-    return 0
         
 def lost_round_msg(turn):
+    global offset
     global font
     if turn == 4:
         text = font.render("Player " + str(1) + " lost the round", True, (128,0,0), (0,0,128))
     else:
         text = font.render("Player " + str(turn+1) + " lost the round", True, (128,0,0), (0,0,128))
+    screen.blit(text, (100,100))
+    text = font.render('Player ' + str(turn) + '\'s Turn', True, (128,0,0), (0,0,128))
+    screen.blit(text, (100,200))
+    offset = 0
+    pygame.display.update()
+    print('player 1: ' + str(len(player1.deck)))
+    print('player 2: ' + str(len(player2.deck)))
+    print('player 3: ' + str(len(player3.deck)))
+    print('player 4: ' + str(len(player4.deck)))
+
+def slap_lost_round_msg(turn):
+    global font
+    global offset 
+    offset = 0
+    text = font.render("Player " + str(turn) + " takes all the card", True, (128,0,0), (0,0,128))
     screen.blit(text, (100,100))
     text = font.render('Player ' + str(turn) + '\'s Turn', True, (128,0,0), (0,0,128))
     screen.blit(text, (100,200))
@@ -222,15 +242,32 @@ def lost_round_msg(turn):
     print('player 3: ' + str(len(player3.deck)))
     print('player 4: ' + str(len(player4.deck)))
 
+slap = False
 def draw(player):
+    global offset
     global table
-    time.sleep(0.6)
+    global slap
+    global turn
+    time.sleep(0.3)
     card_drawn = player.deck.pop()
     table.append(card_drawn)
+    offset += 15
     if is_slap(table):
         for card in table:
             print(card.number, card.shape)
         print('SLAP!!!')
+        slap = True
+        turn = 5
+        
+    set_sound.play()
+    text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (0,0,128))
+    screen.blit(text, (WIDTH/2,HEIGHT-30))
+    text = font.render(str(len(player2.deck)) + " cards", True, (128,0,0), (0,0,128))
+    screen.blit(text, (WIDTH-30,HEIGHT/2))
+    text = font.render(str(len(player3.deck)) + " cards", True, (128,0,0), (0,0,128))
+    screen.blit(text, (WIDTH/2,0))
+    text = font.render(str(len(player4.deck)) + " cards", True, (128,0,0), (0,0,128))
+    screen.blit(text, (0,HEIGHT/2))
     return card_drawn
     
 def whose_card(turn):
@@ -251,21 +288,28 @@ player1_chances = 0
 def player1_defense():
     global player1_chances
     global turn
+    global table
     if len(player1.deck) > 0:
-        card_drawn = draw(player1)
-        if (not card_drawn.is_attack_card) and player1_chances > 0:
-            time.sleep(0.7)
-            display_turn(card_drawn)
-            player1_chances -= 1
-            turn = 0
-            if player1_chances == 0:
-                lost_round_msg(1)
-                reset()
-                turn = 4
-        elif player1_chances > 0:
-            time.sleep(0.7)
-            display_turn(card_drawn)
-            turn = 2
+        if is_slap(table):
+            turn = 5
+        else:
+            card_drawn = draw(player1)
+            if is_slap(table):
+                turn = 5
+            else:
+                if (not card_drawn.is_attack_card) and player1_chances > 0:
+                    display_turn(card_drawn)
+                    player1_chances -= 1
+                    turn = 0
+                    if player1_chances == 0:
+                        for card in table:
+                            players[3].deck.append(card)
+                        lost_round_msg(1)
+                        reset()
+                        turn = 4
+                elif player1_chances > 0:
+                    display_turn(card_drawn)
+                    turn = 2
             
 def is_slap(table):
     if len(table) == 2:
@@ -285,67 +329,119 @@ def is_slap(table):
         if table[len(table)-1].number == 'K' and table[len(table)-2] == 'Q':
             return True
     return False
+x = 0 
+def should_slap(player):
+    global turn
+    global table
+    global slap
+    print('slap?')
+    time.sleep(0.1)
+    global x
+    if x == 10:
+        for card in table:
+            players[1].deck.append(card)
+        table = []
+        print('LUKE took all the cards')
+        turn = 2
+        slap = False
+        slap_lost_round_msg(turn)
+        reset()
+        x = 0
+        return 0
+    for event in pygame.event.get():
+        print("first")
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for card in table:
+                players[0].deck.append(card)
+            table = []
+            print('yoooo')
+            turn = 1
+            slap = False
+            slap_lost_round_msg(turn)
+            reset()
+            x = 0
+            return 0
+            
+        
+offset = 0
     
 def take_turn(player):
     global turn
     global table
     global player1_chances
+    global offset
+    global slap
+    
     if len(player.deck) > 0:
         if len(table) > 0:
             if table[len(table)-1].is_attack_card and player == player1:
                 player1_chances = attack_numbers[table[len(table)-1].number]
                 player1_defense()
             elif table[len(table)-1].is_attack_card:
-                time.sleep(0.7)
                 card_drawn = draw(player)
-                chances = attack_numbers[table[len(table)-2].number]
-                
-                if not card_drawn.is_attack_card:
-                    chances -= 1
-                
-                display_turn(card_drawn)
-                pygame.display.update()      
-                             
-                while not card_drawn.is_attack_card and len(player.deck) > 0 and chances > 0:
-                    time.sleep(0.7)
-                    card_drawn = draw(player)
-                    display_turn(card_drawn)
-                    chances -= 1
+                if not slap:
+                    chances = attack_numbers[table[len(table)-2].number]
                     
-                if not card_drawn.is_attack_card:
-                    turn = player_turn(turn, 'prev')
+                    if not card_drawn.is_attack_card:
+                        chances -= 1
+                    
+                    display_turn(card_drawn)     
+                                
+                    while not card_drawn.is_attack_card and len(player.deck) > 0 and chances > 0:
+                        card_drawn = draw(player)
+                        display_turn(card_drawn)
+                        chances -= 1
                         
-                    for card in table:
-                        players[turn-1].deck.append(card)
-            
-                    lost_round_msg(turn)
-                    reset()
-  
-                elif len(player.deck) <= 0:
-                    print(str(turn) + " ran out of cards!")
-                    turn = player_turn(turn, 'next')
-                else:
-                    turn = player_turn(turn, 'next')
+                    if not card_drawn.is_attack_card and not slap:
+                        turn = player_turn(turn, 'prev')
+                            
+                        for card in table:
+                            players[turn-1].deck.append(card)
+                
+                        lost_round_msg(turn)
+                        reset()
+    
+                    elif len(player.deck) <= 0:
+                        print(str(turn) + " ran out of cards!")
+                        if slap:
+                            turn = 5
+                        else:
+                            turn = player_turn(turn, 'next')
+                    elif slap:
+                        turn =5
+                    else:
+                        turn = player_turn(turn, 'next')
+                else: 
+                    display_turn(card_drawn)
+                    turn = 5
             else:
                 card_drawn = draw(player)
                 whose_card(turn)
-                screen.blit(card_drawn.image, (0, 0))
-                turn = player_turn(turn, 'next')
+                screen.blit(card_drawn.image, (WIDTH/2-WIDTH/4 + offset, HEIGHT/3+WIDTH/8))
+                if not slap:
+                    turn = player_turn(turn, 'next')
+                else:
+                    turn = 5
         else:
             card_drawn = draw(player)
             whose_card(turn)
-            screen.blit(card_drawn.image, (0, 0))
+            screen.blit(card_drawn.image, (WIDTH/2-WIDTH/4 + offset, HEIGHT/3+WIDTH/8))
             turn = player_turn(turn, 'next')
     pygame.display.update()
 
 while True:
     if turn > 1:
-        take_turn(players[turn-1])  
+        if slap:
+            should_slap(player1)
+            x += 1
+            print(x)
+        else: 
+            take_turn(players[turn-1])
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
-        if event.type == pygame.KEYDOWN:
-            print('hi')     
+        if event.type == pygame.KEYDOWN: 
+            print('?')
         if event.type == pygame.MOUSEBUTTONDOWN:
             if turn == 0:
                 player1_defense()
