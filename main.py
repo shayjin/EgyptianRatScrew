@@ -69,7 +69,7 @@ card_images = [
 
 pygame.mixer.init()
 set_sound = pygame.mixer.Sound('set.mp3')
-slap_sound = pygame.mixer.Sound('slap.wav')
+slap_sound = pygame.mixer.Sound('slap.mp3')
 
 background_color = (100,120,120)
 WIDTH = 700
@@ -86,6 +86,7 @@ numbers = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 shapes = ['Heart', 'Diamond', 'Spade', 'Clovers']
 attack_numbers = {'J':1, 'Q':2, 'K':3, 'A':4}
 
+can_slap = False
 
 
 
@@ -184,6 +185,21 @@ def init():
         pygame.draw.circle(screen, (215,185,230),(WIDTH/2,0), 150, 10)
     elif turn == 4:
         pygame.draw.circle(screen, (215,185,230),(0,HEIGHT/2), 150, 10) 
+        
+    text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
+    screen.blit(text, (WIDTH/2-30,HEIGHT-15))
+    text = font.render(str(len(player2.deck)) + " cards", True, (128,0,0), (100,120,128))
+    screen.blit(text, (WIDTH-80,HEIGHT/2+50))
+    text = font.render(str(len(player3.deck)) + " cards", True, (128,0,0), (100,120,128))
+    screen.blit(text, (WIDTH/2-30,USER_HEIGHT))
+    text = font.render(str(len(player4.deck)) + " cards", True, (128,0,0), (100,120,128))
+    screen.blit(text, (20,HEIGHT/2+50))
+    
+    pygame.draw.rect(screen, (0,0,0), pygame.Rect(WIDTH/2-35,HEIGHT-HEIGHT/3.5,70, 40),5)
+    text = font.render("Deal", True, (0,0,0), background_color)
+    screen.blit(text,(WIDTH/2-17, HEIGHT/1.36))
+    
+    
     
 
 table = []
@@ -206,7 +222,6 @@ def status():
 def display_turn(card):
     global screen
     global font
-
     if turn == 5:
         text = font.render("Player " + str(1), True, (128,0,0), (0,0,128))
     else:
@@ -214,7 +229,7 @@ def display_turn(card):
     screen.blit(text, (0,200))
     screen.blit(card.image, (WIDTH/4+offset, HEIGHT/3+WIDTH/8))
     set_sound.play()
-    pygame.display.update()
+    pygame.display.update()  
     time.sleep(0.8)
     
 def player_turn(turn, next_or_prev):
@@ -314,6 +329,8 @@ def draw(player):
     global table
     global slap
     global turn
+    global can_slap
+    can_slap = True
     card_drawn = player.deck.pop()
     table.append(card_drawn)
     offset += 15
@@ -418,6 +435,7 @@ def should_slap(player):
         for card in table:
             players[1].deck.append(card)
         table = []
+        slap_sound.play()
         print('LUKE took all the cards')
         turn = 2
         slap = False
@@ -438,6 +456,7 @@ def should_slap(player):
             for card in table:
                 players[0].deck.append(card)
             table = []
+            slap_sound.play()
             print('yoooo')
             turn = 1
             slap = False
@@ -453,6 +472,7 @@ def take_turn(player):
     global player1_chances
     global offset
     global slap
+    global can_slap
     
     if len(player.deck) > 0:
         if len(table) > 0:
@@ -473,6 +493,13 @@ def take_turn(player):
                         card_drawn = draw(player)
                         display_turn(card_drawn)
                         chances -= 1
+                        for event in pygame.event.get():
+                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                if pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap:
+                                    print('?')
+                                    slap_sound.play()
+                                    slap_at_wrong_time()
+                                    can_slap = False
                         
                     if not card_drawn.is_attack_card and not slap:
                         turn = player_turn(turn, 'prev')
@@ -510,26 +537,52 @@ def take_turn(player):
             display_turn(card_drawn)
             turn = player_turn(turn, 'next')
     pygame.display.update()
+
+def slap_at_wrong_time():
+    global text
+    player1.deck.pop()
+    slap_sound.play()
+    text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
+    screen.blit(text, (WIDTH/2-30,HEIGHT-15))
+    text = font.render("-1 card for slapping at a wrong time", True, (128,0,0), (100,120,128))
+    screen.blit(text, (WIDTH/2-WIDTH/5, HEIGHT-HEIGHT/3))
+    pygame.display.update()
+    time.sleep(2)
+    pygame.draw.rect(screen, (100,120,128), pygame.Rect(WIDTH/2-WIDTH/4,HEIGHT-HEIGHT/3,300, 30),40)
+    pygame.display.update()
     
+
 init()
+
 while True:
     if turn > 1:
         if slap:
             should_slap(player1)
             x += 1
-            print(x)
         else: 
-            print('lel' + str(turn))
+            print(can_slap)
             take_turn(players[turn-1])
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap:
+                        print('?')
+                        slap_sound.play()
+                        slap_at_wrong_time()
+                        can_slap = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
-        if event.type == pygame.KEYDOWN: 
-            print('?')
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if turn == 0:
-                player1_defense()
-            if turn == 1:
-                take_turn(player1) 
-        
+            print(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+            # WIDTH/2-35,HEIGHT-HEIGHT/3.5,70, 40
+            if pygame.mouse.get_pos()[0] > 320 and pygame.mouse.get_pos()[0] < 360 and pygame.mouse.get_pos()[1] > 510 and pygame.mouse.get_pos()[1] < 550:
+                if turn == 0:
+                    player1_defense()
+                if turn == 1:
+                    take_turn(player1)
+            elif pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap:
+                print('?')
+                slap_sound.play()
+                slap_at_wrong_time()
+                can_slap = False
     pygame.display.update()
