@@ -85,8 +85,10 @@ font = pygame.font.Font('freesansbold.ttf',15)
 numbers = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 shapes = ['Heart', 'Diamond', 'Spade', 'Clovers']
 attack_numbers = {'J':1, 'Q':2, 'K':3, 'A':4}
+players_alive = [1, 2, 3, 4]
 
 can_slap = False
+slap = False
 
 
 
@@ -157,9 +159,12 @@ players = [player1, player2, player3, player4]
 
 USER_WIDTH = WIDTH / 7
 USER_HEIGHT = HEIGHT / 7
+TABLE_WIDTH = WIDTH / 1.3
+TABLE_HEIGHT = HEIGHT / 3
 user = pygame.image.load('user.jpeg')
 user = pygame.transform.scale(user, (USER_WIDTH, USER_HEIGHT)) 
-table_img = pygame.image.load('table.jpeg')
+table_img = pygame.image.load('table.png')
+table_img = pygame.transform.scale(table_img, (TABLE_WIDTH, TABLE_HEIGHT))
 turn = 1
 
 def init():
@@ -199,7 +204,12 @@ def init():
     pygame.draw.rect(screen, (0,0,0), pygame.Rect(WIDTH/2-35,HEIGHT-HEIGHT/3.5,70, 40),5)
     text = font.render("Deal", True, (0,0,0), background_color)
     screen.blit(text,(WIDTH/2-17, HEIGHT/1.36))
-    
+
+deck1_copy = player1_deck
+deck2_copy = player2_deck
+deck3_copy = player3_deck
+deck4_copy = player4.deck
+recent_attack_card = ""
     
     
 
@@ -224,6 +234,7 @@ def display_turn(card):
     global screen
     global font
     global slap
+    global can_slap
     if turn == 5:
         text = font.render("Player " + str(1), True, (128,0,0), (0,0,128))
     else:
@@ -251,13 +262,13 @@ def player_turn(turn, next_or_prev):
             
         if len(players[turn-1].deck) == 0:
             print("player " + str(turn) + " ran out of cards!")
-            turn = player_turn(turn, 'prev')
+        
+        return turn
     elif next_or_prev == 'next':
         
         print(turn)
         if len(players[turn-1].deck) == 0:
             print("player " + str(turn) + " ran out of cards!")
-            turn = player_turn(turn, 'next')
         turn += 1
         if turn == 5:
             turn = 1
@@ -271,65 +282,57 @@ def player_turn(turn, next_or_prev):
         elif turn == 4:
             pygame.draw.circle(screen, (215,185,230),(0,HEIGHT/2), 150, 10)
             
-    return turn
+        return turn
     
         
 def lost_round_msg(turn):
     global offset
     global font
     global can_slap
+    
+    offset = 0
     can_slap = False
+
     text = font.render("Player " + str(turn) + " won the round", True, (0,0,0), background_color)
     screen.blit(text, (WIDTH/2-WIDTH/7, 200))
-    offset = 0
+    
     for i in range(10):
+        
+        time.sleep(0.05)
+        
         if turn == 1:
-            time.sleep(0.05)
             pygame.draw.circle(screen, (240,240,240),(WIDTH/2,HEIGHT), 150, 10)
-            pygame.display.update()
-            time.sleep(0.05)
-            pygame.draw.circle(screen, (134,50,20),(WIDTH/2,HEIGHT), 150, 10)
-            pygame.display.update() 
         if turn == 2:
-            time.sleep(0.05)
             pygame.draw.circle(screen, (240,240,240),(WIDTH,HEIGHT/2), 150, 10)
-            pygame.display.update()
-            time.sleep(0.05)
-            pygame.draw.circle(screen, (134,50,20),(WIDTH,HEIGHT/2), 150, 10)
-            pygame.display.update() 
         if turn == 3:
-            time.sleep(0.05)
             pygame.draw.circle(screen, (240,240,240),(WIDTH/2,0), 150, 10)
-            pygame.display.update()
-            time.sleep(0.05)
-            pygame.draw.circle(screen, (134,50,20),(WIDTH/2,0), 150, 10)
-            pygame.display.update() 
         if turn == 4:
-            time.sleep(0.05)
             pygame.draw.circle(screen, (240,240,240),(0,HEIGHT/2), 150, 10)
-            pygame.display.update()
-            time.sleep(0.05)
+            
+        pygame.display.update()
+        time.sleep(0.05)
+        
+        if turn == 1:
+            pygame.draw.circle(screen, (134,50,20),(WIDTH/2,HEIGHT), 150, 10)
+        if turn == 2:
+            pygame.draw.circle(screen, (134,50,20),(WIDTH,HEIGHT/2), 150, 10)
+        if turn == 3:
+            pygame.draw.circle(screen, (134,50,20),(WIDTH/2,0), 150, 10)
+        if turn == 4:
             pygame.draw.circle(screen, (134,50,20),(0,HEIGHT/2), 150, 10)
-            pygame.display.update()    
+            
+        pygame.display.update()    
+        
     time.sleep(1.5)
-    print('player 1: ' + str(len(player1.deck)))
-    print('player 2: ' + str(len(player2.deck)))
-    print('player 3: ' + str(len(player3.deck)))
-    print('player 4: ' + str(len(player4.deck)))
 
 def slap_lost_round_msg(turn):
     global font
     global offset 
+    
     offset = 0
     text = font.render("Player " + str(turn) + " takes all the card", True, (0,0,0), background_color)
     screen.blit(text, (WIDTH/2-WIDTH/7, 200))
     pygame.display.update()
-    print('player 1: ' + str(len(player1.deck)))
-    print('player 2: ' + str(len(player2.deck)))
-    print('player 3: ' + str(len(player3.deck)))
-    print('player 4: ' + str(len(player4.deck)))
-
-slap = False
 
 def draw(player):
     global offset
@@ -337,27 +340,32 @@ def draw(player):
     global slap
     global turn
     global can_slap
-    can_slap = True
-    card_drawn = player.deck.pop()
-    table.append(card_drawn)
-    offset += 15
-    if is_slap(table):
-        for card in table:
-            print(card.number, card.shape)
-        print('SLAP!!!')
-        slap = True
-    
+    if not slap:
+        can_slap = True
+        offset += 15
+            
+        card_drawn = player.deck.pop()
+        table.append(card_drawn)
         
-    text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (WIDTH/2-30,HEIGHT-15))
-    text = font.render(str(len(player2.deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (WIDTH-80,HEIGHT/2+50))
-    text = font.render(str(len(player3.deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (WIDTH/2-30,USER_HEIGHT))
-    text = font.render(str(len(player4.deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (20,HEIGHT/2+50))
-    time.sleep(0.1)
-    return card_drawn
+        if is_slap(table):
+            for card in table:
+                print(card.number, card.shape)
+            print('SLAP!!!')
+            slap = True
+        
+            
+        text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
+        screen.blit(text, (WIDTH/2-30,HEIGHT-15))
+        text = font.render(str(len(player2.deck)) + " cards", True, (128,0,0), (100,120,128))
+        screen.blit(text, (WIDTH-80,HEIGHT/2+50))
+        text = font.render(str(len(player3.deck)) + " cards", True, (128,0,0), (100,120,128))
+        screen.blit(text, (WIDTH/2-30,USER_HEIGHT))
+        text = font.render(str(len(player4.deck)) + " cards", True, (128,0,0), (100,120,128))
+        screen.blit(text, (20,HEIGHT/2+50))
+        
+        time.sleep(0.1)
+        
+        return card_drawn
     
 def whose_card(turn):
     global font
@@ -402,19 +410,25 @@ def should_slap(player):
     global turn
     global table
     global slap
+    global can_slap
+    global trash_deck
+
     print('slap?')
     time.sleep(0.1)
     global x
-    if x == 10:
+    if x == 4:
+        can_slap = False
         for card in table:
-            players[1].deck.append(card)
+            players[1].deck.insert(0, card)
+        for card in trash_deck:
+            players[1].deck.insert(0, card)
         table = []
         slap_sound.play()
         print('LUKE took all the cards')
         turn = 2
         slap = False
         slap_lost_round_msg(turn)
-        for i in range(4):
+        for i in range(10):
             time.sleep(0.05)
             pygame.draw.circle(screen, (240,240,240),(WIDTH,HEIGHT/2), 150, 10)
             pygame.display.update()
@@ -425,10 +439,9 @@ def should_slap(player):
         x = 0
         return 0
     for event in pygame.event.get():
-        print("first")
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN and slap:
             for card in table:
-                players[0].deck.append(card)
+                players[0].deck.insert(0, card)
             table = []
             slap_sound.play()
             print('yoooo')
@@ -449,12 +462,12 @@ def take_turn(player):
     global slap
     global can_slap
     global temp
+    global recent_attack_card
     
     if len(player.deck) > 0:
         if len(table) > 0:
             if (table[len(table)-1].is_attack_card and player == player1):
                 temp.append(attack_numbers[table[len(table)-1].number])
-                print(temp[0])
                 turn = 0
                 player1_defense()
             elif turn == 0: # defense again
@@ -486,7 +499,7 @@ def take_turn(player):
                         turn = player_turn(turn, 'prev')
                             
                         for card in table:
-                            players[turn-1].deck.append(card)
+                            players[turn-1].deck.insert(0, card)
                 
                         lost_round_msg(turn)
                         reset()
@@ -513,6 +526,7 @@ def take_turn(player):
                     turn = 5
                 else:
                     turn = player_turn(turn, 'next')
+                    print(turn)
         else:
             card_drawn = draw(player)
             whose_card(turn)
@@ -521,17 +535,23 @@ def take_turn(player):
     pygame.display.update()
 
 trash_offset = 0
+trash_deck = []
+
 def slap_at_wrong_time():
     global text
     global trash_offset
+    global trash_deck
     
     trash_card = player1.deck.pop()
+    trash_deck.append(trash_card)
     slap_sound.play()
+    
     text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
     screen.blit(text, (WIDTH/2-30,HEIGHT-15))
     text = font.render("-1 card for slapping at a wrong time", True, (128,0,0), (100,120,128))
     screen.blit(text, (WIDTH/2-WIDTH/5, HEIGHT-HEIGHT/3))
     screen.blit(trash_card.image, (WIDTH/1.3 + trash_offset, HEIGHT/1.3))
+    
     pygame.display.update()
     time.sleep(1)
     trash_offset += 15
@@ -546,6 +566,8 @@ def player1_defense():
     global slap
     global can_slap
     global temp
+    global trash_deck
+    
     if len(player1.deck) > 0:
         card_drawn = draw(player1)
         screen.blit(card_drawn.image, (WIDTH/2-WIDTH/4 + offset, HEIGHT/3+WIDTH/8))
@@ -556,57 +578,58 @@ def player1_defense():
             if (not card_drawn.is_attack_card) and temp[0] > 0:
                 display_turn(card_drawn)
                 temp[0] -= 1
-                turn = 0
                 if temp[0] == 0:
                     can_slap = False
                     turn = 1
                     turn = player_turn(turn, 'prev')
                     for card in table:
-                        players[3].deck.append(card)
+                        players[3].deck.insert(0, card)
+                    for card in trash_deck:
+                        players[3].deck.insert(0, card)
                     lost_round_msg(turn)
                     reset()
             elif temp[0] > 0:
+                turn = 1
+                turn = player_turn(turn, 'next')
                 display_turn(card_drawn)
-                turn = 2
             else: 
                 can_slap = False
+                turn = 1
                 turn = player_turn(turn, 'prev')
                 for card in table:
-                    players[3].deck.append(card)
+                    players[3].deck.insert(0,card)
+                for card in trash_deck:
+                    players[3].deck.insert(0,card)
                 lost_round_msg(turn)
                 reset()
 
 init()
 
 while True:
-    if turn > 1:
+    if turn > 1 or len(player1.deck) == 0:
         if slap:
             should_slap(player1)
             x += 1
         else: 
-            print(can_slap)
-            take_turn(players[turn-1])
-            for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and (not slap):
-                        print('?')
-                        slap_sound.play()
-                        slap_at_wrong_time()
-                        can_slap = False
+            print(len(players[turn-1].deck))
+            if len(players[turn-1].deck) > 0:
+                print('sup')
+                take_turn(players[turn-1])
+            else:
+                turn = player_turn(turn, 'next')
+        
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
-            print(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
             # WIDTH/2-35,HEIGHT-HEIGHT/3.5,70, 40
-            if pygame.mouse.get_pos()[0] > 319 and pygame.mouse.get_pos()[0] < 380 and pygame.mouse.get_pos()[1] > 504 and pygame.mouse.get_pos()[1] < 535:
-                if turn == 0:
-                    take_turn(player1)
-                if turn == 1:
-                    take_turn(player1)
-            elif pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and (not slap):
-                print('?')
-                slap_sound.play()
-                slap_at_wrong_time()
-                can_slap = False
+            if len(player1.deck) > 0:
+                if pygame.mouse.get_pos()[0] > 319 and pygame.mouse.get_pos()[0] < 380 and pygame.mouse.get_pos()[1] > 504 and pygame.mouse.get_pos()[1] < 535:
+                    if turn == 0:
+                        take_turn(player1)
+                    if turn == 1:
+                        take_turn(player1)
+                elif pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and (not slap):
+                    slap_sound.play()
+                    slap_at_wrong_time()
     pygame.display.update()
