@@ -93,12 +93,13 @@ player2_deck = []
 player3_deck = []
 player4_deck = [] 
 
+can_deal = True
 can_slap = False
 slap = False
 turn = 1
 
-USER_WIDTH = WIDTH / 7
-USER_HEIGHT = HEIGHT / 7
+USER_WIDTH = WIDTH / 8
+USER_HEIGHT = HEIGHT / 8
 TABLE_WIDTH = WIDTH / 1.3
 TABLE_HEIGHT = HEIGHT / 3
 user = pygame.image.load('user.jpeg')
@@ -147,19 +148,30 @@ def distribute():
 class Player:
     name = ''
     deck = []
+    image = ""
     reaction_low = 0
     reaction_high = 0
     
-    def __init__(self, name, deck, reaction_low, reaction_high):
+    def __init__(self, name, deck, image, reaction_low, reaction_high):
         self.name = name
         self.deck = deck
+        self.image = image
         self.reaction_low = reaction_low
         self.reaction_high = reaction_high
+        
+luke_w = pygame.image.load('luke_w.jpeg')
+luke_w = pygame.transform.scale(luke_w, (USER_WIDTH, USER_HEIGHT))     
+
+andre_f = pygame.image.load('andre_f.jpeg')
+andre_f = pygame.transform.scale(andre_f, (USER_WIDTH, USER_HEIGHT))     
+
+shay_j = pygame.image.load('shay_j.jpeg')
+shay_j = pygame.transform.scale(shay_j, (USER_WIDTH, USER_HEIGHT))                
                  
-player1 = Player("User", player1_deck, 0, 0)
-player2 = Player("Luke W", player2_deck, 2, 8)
-player3 = Player("Andre F", player3_deck, 6, 14)
-player4 = Player("Shay J", player4_deck, 5, 10)
+player1 = Player("User", player1_deck, user, 0, 0)
+player2 = Player("Luke W", player2_deck, luke_w, 2, 8)
+player3 = Player("Andre F", player3_deck, andre_f, 6, 14)
+player4 = Player("Shay J", player4_deck, shay_j, 5, 10)
     
 players = [player1, player2, player3, player4]
 
@@ -179,6 +191,9 @@ def init():
     global recent_attack_card
     global reaction_winner
     global reaction_winner_index
+    global can_deal
+    
+    can_deal = True
     
     deck1_copy = player1_deck
     deck2_copy = player2_deck
@@ -188,10 +203,10 @@ def init():
     
     screen.blit(table_img, (WIDTH/2 - table_img.get_width()/2, HEIGHT/2 - table_img.get_height()/2))
 
-    screen.blit(user, (WIDTH/2-user.get_width()/2, HEIGHT-user.get_height()))
-    screen.blit(user, (WIDTH-user.get_width(), HEIGHT/2-user.get_height()/2))
-    screen.blit(user, (WIDTH/2-user.get_width()/2, 0))
-    screen.blit(user, (0, HEIGHT/2-user.get_height()/2))    
+    screen.blit(player1.image, (WIDTH/2-user.get_width()/2, HEIGHT-user.get_height()-30))
+    screen.blit(player2.image, (WIDTH-user.get_width(), HEIGHT/2-user.get_height()/2))
+    screen.blit(player3.image, (WIDTH/2-user.get_width()/2, 0))
+    screen.blit(player4.image, (0, HEIGHT/2-user.get_height()/2))    
 
     pygame.draw.circle(screen, (240,240,240),(WIDTH/2,HEIGHT), 150, 10)
     pygame.draw.circle(screen, (240,240,240),(WIDTH,HEIGHT/2), 150, 10)
@@ -205,16 +220,28 @@ def init():
     elif turn == 3:
         pygame.draw.circle(screen, (215,185,230),(WIDTH/2,0), 150, 10)
     elif turn == 4:
-        pygame.draw.circle(screen, (215,185,230),(0,HEIGHT/2), 150, 10) 
+        pygame.draw.circle(screen, (215,185,230),(0,HEIGHT/2), 150, 10)
+        
+    p1_name = font.render(player1.name, True, (0,0,0), (100,120,128))
+    screen.blit(p1_name, (WIDTH/2-len(player1.name)*5,HEIGHT-30)) 
+    
+    p2_name = font.render(player2.name, True, (0,0,0), (100,120,128))
+    screen.blit(p2_name, (WIDTH-75,HEIGHT/2+50))
+    
+    p3_name = font.render(player3.name, True, (0,0,0), (100,120,128))
+    screen.blit(p3_name, (WIDTH/2-len(player3.name)*5,90))
+    
+    p4_name = font.render(player4.name, True, (0,0,0), (100,120,128))
+    screen.blit(p4_name, (20,HEIGHT/2+50))
     
     text = font.render(str(len(players[0].deck)) + " cards", True, (128,0,0), (100,120,128))
     screen.blit(text, (WIDTH/2-30,HEIGHT-15))
     text = font.render(str(len(players[1].deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (WIDTH-80,HEIGHT/2+50))
+    screen.blit(text, (WIDTH-80,HEIGHT/2+70))
     text = font.render(str(len(players[2].deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (WIDTH/2-30,USER_HEIGHT))
+    screen.blit(text, (WIDTH/2-30,HEIGHT/6.3))
     text = font.render(str(len(players[3].deck)) + " cards", True, (128,0,0), (100,120,128))
-    screen.blit(text, (20,HEIGHT/2+50))
+    screen.blit(text, (20,HEIGHT/2+70))
     
     pygame.draw.rect(screen, (0,0,0), pygame.Rect(WIDTH/2-35,HEIGHT-HEIGHT/3.5,70, 40),5)
     text = font.render("Deal", True, (0,0,0), background_color)
@@ -223,20 +250,19 @@ def init():
     player2_reaction = random.randint(players[1].reaction_low, players[1].reaction_high)
     player3_reaction = random.randint(players[2].reaction_low, players[2].reaction_high)
     player4_reaction = random.randint(players[3].reaction_low, players[3].reaction_high)
-    print(player2_reaction, player3_reaction, player4_reaction)
-    reaction_winner = ""
+    reaction_winner = 100
     reaction_winner_index = 0
-    if player2_reaction <= player3_reaction and player2_reaction <= player4_reaction and 2 in players_alive:
+    
+    if player2_reaction <= reaction_winner and 2 in players_alive:
         reaction_winner = player2_reaction
         reaction_winner_index = 1
-    if player3_reaction <= player2_reaction and player3_reaction <= player4_reaction and 3 in players_alive:
+    if player3_reaction <= reaction_winner and 3 in players_alive:
         reaction_winner = player3_reaction
         reaction_winner_index = 2
-    if player4_reaction <= player2_reaction and player4_reaction <= player3_reaction and 4 in players_alive:
+    if player4_reaction <= reaction_winner and 4 in players_alive:
         reaction_winner = player4_reaction
         reaction_winner_index = 3
-        
-    print(reaction_winner, reaction_winner_index)
+            
 
 def status():
     print("1:")
@@ -382,6 +408,28 @@ def draw(player):
     global slap
     global can_slap
     
+    print("CURRENT TURN: " + str(turn))
+    
+    for card in table:
+        print(str(card.number) + "" + card.shape, end =", ")
+    print("")
+    print("P1", end =": [")
+    for card in player1.deck:
+        print(str(card.number) + "" + card.shape, end =", ")
+    print(']')
+    print("P2", end =": [")
+    for card in player2.deck:
+        print(str(card.number) + "" + card.shape, end =", ")
+    print(']')
+    print("P3", end =": [")
+    for card in player3.deck:
+        print(str(card.number) + "" + card.shape, end =", ")
+    print(']')
+    print("P4", end =": [")
+    for card in player4.deck:
+        print(str(card.number) + "" + card.shape, end =", ")
+    print(']')
+        
     if not slap:
         can_slap = True
         offset += 15
@@ -392,15 +440,22 @@ def draw(player):
         if is_slap(table):         
             print('SLAP!!!')
             slap = True
+            
+        if len(player.deck) == 0 and not slap and not card_drawn.is_attack_card:
+            can_slap = False
+            can_deal = False
+            text = font.render("You've lost all of your cards!", True, (0,0,0), background_color)
+            screen.blit(text,(WIDTH/2-100, HEIGHT/1.45))
+            
         
         text = font.render(str(len(player1.deck)) + " cards", True, (128,0,0), (100,120,128))
         screen.blit(text, (WIDTH/2-30,HEIGHT-15))
         text = font.render(str(len(player2.deck)) + " cards", True, (128,0,0), (100,120,128))
-        screen.blit(text, (WIDTH-80,HEIGHT/2+50))
+        screen.blit(text, (WIDTH-80,HEIGHT/2+70))
         text = font.render(str(len(player3.deck)) + " cards", True, (128,0,0), (100,120,128))
-        screen.blit(text, (WIDTH/2-30,USER_HEIGHT))
+        screen.blit(text, (WIDTH/2-30,HEIGHT/6.3))
         text = font.render(str(len(player4.deck)) + " cards", True, (128,0,0), (100,120,128))
-        screen.blit(text, (20,HEIGHT/2+50))
+        screen.blit(text, (20,HEIGHT/2+70))
         
         time.sleep(0.1)
         
@@ -423,6 +478,10 @@ def reset():
     global deck2_copy
     global deck3_copy
     global deck4_copy
+    global turn 
+    global can_deal
+    global can_slap
+    
     offset = 0
     trash_deck = []
     temp = []
@@ -437,6 +496,19 @@ def reset():
     deck4_copy = players[3].deck
     recent_attack_card = ""
     pygame.display.update()
+    if len(player1.deck) == 0:
+        can_slap = False
+        can_deal = False
+        text = font.render("You've lost all of your cards!", True, (0,0,0), background_color)
+        screen.blit(text,(WIDTH/2-100, HEIGHT/1.45))
+    if len(players_alive) == 1:
+        turn == -1
+        slap = False
+        text = font.render(players[players_alive[0]-1].name + " wins!", True, (0,0,0), (100,120,128))
+        screen.blit(text, (WIDTH/2-WIDTH/7, 200))
+        can_deal = False
+        pygame.display.update()
+        
 
 player1_chances = 0
             
@@ -480,7 +552,7 @@ def should_slap():
     
     if x == reaction_winner and (reaction_winner_index+1) in players_alive:
         can_slap = False
-        give_cards_to_winner(1)
+        give_cards_to_winner(reaction_winner_index)
             
         table = []
         slap_sound.play()
@@ -560,24 +632,23 @@ def take_turn(player):
                 
                 display_turn(card_drawn)     
                             
-                while not card_drawn.is_attack_card and len(player.deck) > 0 and chances > 0:
+                while not card_drawn.is_attack_card and len(player.deck) > 0 and chances > 0 and not slap:
                     card_drawn = draw(player)
-                    print(turn,len(players[turn-1].deck))
-                    print(card_drawn.number, card_drawn.shape)
-                    display_turn(card_drawn)
-                    chances -= 1
-                    for event in pygame.event.get():
-                        if event.type == pygame.MOUSEBUTTONDOWN:
-                            if pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and not slap and 1 in players_alive:
-                                slap_sound.play()
-                                slap_at_wrong_time()
-                                can_slap = False
+                    if not slap:
+                        display_turn(card_drawn)
+                        chances -= 1
+                        for event in pygame.event.get():
+                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                if pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and not slap and 1 in players_alive:
+                                    slap_sound.play()
+                                    slap_at_wrong_time()
+                                    can_slap = False
                     
                 if not card_drawn.is_attack_card and not slap:
                     can_slap = False
                     turn = player_turn(turn, 'prev')
                     
-                    give_cards_to_winner(0)
+                    give_cards_to_winner(turn-1)
 
                     lost_round_msg()
                     reset()
@@ -585,23 +656,22 @@ def take_turn(player):
                 elif len(player.deck) <= 0:
                     print(str(turn) + " ran out of cards!")
                     if slap:
-                        turn = 5
+                        pass
 
                     else:
                         turn = player_turn(turn, 'next')
                 elif slap:
-                    turn =5
+                    pass
                 else:
                     turn = player_turn(turn, 'next')
             else: 
                 display_turn(card_drawn)
-                turn = 5
         else:
             card_drawn = draw(player)
             whose_card(turn)
             display_turn(card_drawn)
             if slap:
-                turn = 5
+                pass
             else:
                 turn = player_turn(turn, 'next')
     else:
@@ -641,6 +711,14 @@ def slap_at_wrong_time():
         pygame.draw.rect(screen, (100,120,128), pygame.Rect(WIDTH/2-WIDTH/4,HEIGHT-HEIGHT/3,300, 30),40)
         
         pygame.display.update()
+    if len(player1.deck) == 0:
+        turn =  1
+        turn = player_turn(turn, 'next')
+
+        players_alive.pop(players_alive.index(1))
+        text = font.render("You've lost all of your cards!", True, (0,0,0), background_color)
+        screen.blit(text,(WIDTH/2-100, HEIGHT/1.45))
+        print("FINISH? " + str(turn))
     
 def player1_defense():
     global player1_chances
@@ -652,12 +730,20 @@ def player1_defense():
     global temp
     global trash_deck
     
-    if len(player1.deck) > 0:
+    if len(player1.deck) > 0 and not slap:
         card_drawn = draw(player1)
         screen.blit(card_drawn.image, (WIDTH/2-WIDTH/4 + offset, HEIGHT/3+WIDTH/8))
         pygame.display.update()
-        if is_slap(table):
-               turn = 5
+        if len(player1.deck) == 0 and not slap:
+            turn =  1
+            turn = player_turn(turn, 'next')
+            display_turn(card_drawn)
+            players_alive.pop(players_alive.index(1))
+            text = font.render("You've lost all of your cards!", True, (0,0,0), background_color)
+            screen.blit(text,(WIDTH/2-100, HEIGHT/1.45))
+            print("FINISH? " + str(turn))
+        elif slap:
+            turn = 5
         else:
             if (not card_drawn.is_attack_card) and temp[0] > 0:
                 display_turn(card_drawn)
@@ -667,7 +753,7 @@ def player1_defense():
                     turn = 1
                     turn = player_turn(turn, 'prev')
                     
-                    give_cards_to_winner(3)
+                    give_cards_to_winner(turn-1)
                     
                     lost_round_msg()
                     reset()
@@ -680,16 +766,20 @@ def player1_defense():
                 turn = 1
                 turn = player_turn(turn, 'prev')
                 
-                give_cards_to_winner(3)
+                give_cards_to_winner(turn-1)
                     
                 lost_round_msg()
                 reset()
+    elif slap:
+        turn = 5
+        
+        
                 
 def give_cards_to_winner(player_index):
     global table
     global trash_deck
     global players
-    
+    print(player_index)
     for card in table:
         players[player_index].deck.insert(0,card)
     for card in trash_deck:
@@ -703,14 +793,12 @@ init()
 
 
 while True:
-    
-    if turn > 1 or len(player1.deck) == 0:
+    if turn > 1 or slap:
         if slap:
             should_slap()
             x += 1
-        else: 
+        elif turn in players_alive and not slap:
             if len(players[turn-1].deck) > 0:
-                print(str(turn) + "ggg")
                 take_turn(players[turn-1])
             else:
                 turn = player_turn(turn, 'next')
@@ -719,7 +807,7 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN and len(player1.deck) > 0 and 1 in players_alive:
-            if pygame.mouse.get_pos()[0] > 319 and pygame.mouse.get_pos()[0] < 380 and pygame.mouse.get_pos()[1] > 504 and pygame.mouse.get_pos()[1] < 535:
+            if pygame.mouse.get_pos()[0] > 319 and pygame.mouse.get_pos()[0] < 380 and pygame.mouse.get_pos()[1] > 504 and pygame.mouse.get_pos()[1] < 535 and can_deal:
                 if (turn == 1 or turn == 0) and len(player1.deck) > 0:
                     take_turn(player1)
             elif pygame.mouse.get_pos()[0] > 205 and pygame.mouse.get_pos()[0] < 500 and pygame.mouse.get_pos()[1] > 270 and pygame.mouse.get_pos()[1] < 435 and can_slap and (not slap) and 1 in players_alive:
