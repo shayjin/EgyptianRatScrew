@@ -1,11 +1,21 @@
-# egyption-rat-screw
+# Egyptian Rat Screw (ERS)
+[What is ERS?](https://bicyclecards.com/how-to-play/egyptian-rat-screw/)
 
-**5/19 할일:**
+## Tools:
+- Python (PyGame)
+- Git
+- Visual Studio Code
+## Contributors
+- Jay Shin (shin.810@osu.edu)
+- Ella Lee (Artwork) (lee.10086@osu.edu)
 
-이길때 사운드 넣기
 
-턴 바낄때 사운드 넣기 (내 턴일때 다르게)
+## Demo
 
+<img width="694" alt="ers" src="https://user-images.githubusercontent.com/83435667/179071314-c9513084-7440-45b1-9ae8-8e4a00deb752.png">
+
+
+## Cases Considered
 
 방어 (플레이어 1 전에 있는 현제 살아있는 플레이어가 플레이어 1을 공격한 케이스):
 방어하는 내 차례에서 슬랩해야할떄가 아니면 카드를 냄
