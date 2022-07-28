@@ -265,22 +265,7 @@ def init():
     if player4_reaction <= reaction_winner and 4 in players_alive:
         reaction_winner = player4_reaction
         reaction_winner_index = 3
-            
-def status():
-    print("1:")
-    for x in player1_deck:
-        print(x.number, x.shape)
-    print("2:")
-    for x in player2_deck:
-        print(x.number, x.shape)
-    print("3:")
-    for x in player3_deck:
-        print(x.number, x.shape)
-    print("4:")
-    for x in player4_deck:
-        print(x.number, x.shape)
     
-
 def display_turn(card):
     global screen
     global font
@@ -311,7 +296,7 @@ def player_turn(turn, next_or_prev):
     if next_or_prev == 'prev':         
         turn -= 1
                         
-        if turn == 0:
+        if turn <= 0:
             turn = 4
         if turn not in players_alive or len(players[turn-1].deck) == 0:
             turn = player_turn(turn, "prev")
@@ -343,7 +328,7 @@ def lost_round_msg():
     global can_slap
     global players_alive
     global turn
-    
+
     can_slap = False
 
     if not turn in players_alive:
@@ -352,9 +337,7 @@ def lost_round_msg():
     text = font.render(players[turn-1].name + " won the round", True, (0,0,0), background_color)
     screen.blit(text, (WIDTH/2-WIDTH/7, 200))
     
-    print("here")
     if len(player1.deck) == 0 and 1 in players_alive:
-        print('plyaer 1')
         players_alive.pop(players_alive.index(1))
     if len(player2.deck) == 0 and 2 in players_alive:
         players_alive.pop(players_alive.index(2))
@@ -393,7 +376,6 @@ def lost_round_msg():
 
 def slap_lost_round_msg(turn):
     global font
-    
     text = font.render(players[turn-1].name + " takes all the cards", True, (0,0,0), background_color)
     screen.blit(text, (WIDTH/2-WIDTH/7, 200))
     pygame.display.update()
@@ -407,7 +389,6 @@ def draw(player):
     if not slap:
         can_slap = True
         offset += 15
-            
         card_drawn = player.deck.pop()
         table.append(card_drawn)
         
@@ -435,7 +416,6 @@ def draw(player):
     
 def whose_card(turn):
     global font
-    
     text = font.render("Player " + str(turn), True, (128,0,0), (0,0,128))
     screen.blit(text, (0,200))
 
@@ -481,28 +461,25 @@ def reset():
         can_deal = False
         pygame.display.update()
         
-
 player1_chances = 0
             
 def is_slap(table):
     if len(table) == 2:
         if table[0].number == table[1].number:
             return True
-        if table[0].number == 'Q' and table[1] == 'K':
+        if table[0].number == 'Q' and table[1].number == 'K':
             return True
-        if table[0].number == 'K' and table[1] == 'Q':
+        if table[0].number == 'K' and table[1].number == 'Q':
             return True
-        
     elif len(table) > 2:
         if table[len(table)-1].number == table[len(table)-2].number:
             return True
         if table[len(table)-1].number == table[len(table)-3].number:
             return True
-        if table[len(table)-1].number == 'Q' and table[len(table)-2] == 'K':
+        if table[len(table)-1].number == "Q" and table[len(table)-2].number == "K":
             return True
-        if table[len(table)-1].number == 'K' and table[len(table)-2] == 'Q':
+        if table[len(table)-1].number == "K" and table[len(table)-2].number == "Q":
             return True
-        
     return False
 
 x = 0 
@@ -579,7 +556,6 @@ def should_slap():
                     pygame.draw.circle(screen, (134,50,20),(WIDTH/2,HEIGHT), WIDTH/4.8, 10)
                         
                     pygame.display.update()    
-                
                 reset()
                 return 0
             
@@ -626,18 +602,14 @@ def take_turn(player):
                     
                 if not card_drawn.is_attack_card and not slap:
                     can_slap = False
-
                     turn = player_turn(turn, 'prev')
                     
                     give_cards_to_winner(turn-1)
-
                     lost_round_msg()
                     reset()
-
                 elif len(player.deck) <= 0:
                     if slap:
                         pass
-
                     else:
                         turn = player_turn(turn, 'next')
                 elif slap:
@@ -691,6 +663,7 @@ def slap_at_wrong_time():
         pygame.draw.rect(screen, (100,120,128), pygame.Rect(WIDTH/2-WIDTH/4,HEIGHT-HEIGHT/3,300, 30),40)
         
         pygame.display.update()
+
     if len(player1.deck) == 0:
         turn = 1
         turn = player_turn(turn, 'next')
@@ -718,8 +691,10 @@ def player1_defense():
 
             give_cards_to_winner(turn-1)
             players_alive.pop(players_alive.index(1))
+            
             text = font.render("You've lost all of your cards!", True, (0,0,0), background_color)
             screen.blit(text,(WIDTH/2-100, HEIGHT/1.45))
+
             lost_round_msg()
             reset()
         elif slap:
@@ -733,7 +708,6 @@ def player1_defense():
                     turn = player_turn(turn, 'prev')
 
                     give_cards_to_winner(turn-1)
-                    
                     lost_round_msg()
                     reset()
             elif temp[0] > 0:
@@ -745,13 +719,10 @@ def player1_defense():
                 turn = player_turn(turn, 'prev')
                 
                 give_cards_to_winner(turn-1)
-                    
                 lost_round_msg()
                 reset()
     elif slap:
         turn = 5
-        
-        
                 
 def give_cards_to_winner(player_index):
     global table
@@ -763,12 +734,10 @@ def give_cards_to_winner(player_index):
     for card in trash_deck:
         players[player_index].deck.insert(0,card)
 
-
 deck = make_deck(deck)
 random.shuffle(deck)
 distribute()
 init()
-
 
 while True:
     if turn > 1 or slap:
